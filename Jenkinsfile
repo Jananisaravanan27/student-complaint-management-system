@@ -2,40 +2,38 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE_BACKEND = 'priyankamanickam/complaint-backend'   // change to your repo
-        // Full paths – update these to match your machine
-        DOCKER_COMPOSE = 'C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker-compose.exe'
+        DOCKER_IMAGE_BACKEND = 'priyankamanickam/complaint-backend'
         NODE = 'C:\\Program Files\\nodejs\\node.exe'
         NPM = 'C:\\Program Files\\nodejs\\npm.cmd'
     }
 
     stages {
+
         stage('Start Test Environment') {
             steps {
                 script {
-                    bat "${env.DOCKER_COMPOSE} down --volumes --remove-orphans || true"
-                    bat "${env.DOCKER_COMPOSE} up -d mongodb backend"
+                    bat "docker compose down --volumes --remove-orphans || exit 0"
+                    bat "docker compose up -d mongodb backend"
                     powershell 'Start-Sleep -Seconds 15'
                 }
             }
         }
 
-        // stage('Install Test Dependencies') {
-        //     steps {
-        //         dir('tests') {
-        //             bat "${env.NPM} install axios"
-        //         }
-        //     }
-        // }
-
-        stage('Run Integration Tests') {
-        steps {
-            dir('tests') {
-                bat "${env.NPM} install"
-                bat "${env.NPM} test"
+        stage('Install Test Dependencies') {
+            steps {
+                dir('tests') {
+                    bat "${env.NPM} install"
+                }
             }
         }
-    }
+
+        stage('Run Integration Tests') {
+            steps {
+                dir('tests') {
+                    bat "${env.NPM} test"
+                }
+            }
+        }
 
         stage('Build and Push Backend Image') {
             steps {
@@ -51,7 +49,7 @@ pipeline {
 
     post {
         always {
-            bat "${env.DOCKER_COMPOSE} down --volumes --remove-orphans || true"
+            bat "docker compose down --volumes --remove-orphans || exit 0"
         }
     }
 }
