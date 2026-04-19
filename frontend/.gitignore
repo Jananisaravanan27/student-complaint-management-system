@@ -1,0 +1,19 @@
+# Node modules
+node_modules/
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.*
+
+# Build files (if you later use React/Vite etc.)
+dist/
+build/
+
+# Editor
+.vscode/
+
+# OS
+.DS_Store
