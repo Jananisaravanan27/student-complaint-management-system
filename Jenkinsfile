@@ -3,7 +3,6 @@ pipeline {
 
     environment {
         DOCKER_IMAGE_BACKEND = 'priyankamanickam/complaint-backend'
-        NODE = 'C:\\Program Files\\nodejs\\node.exe'
         NPM = 'C:\\Program Files\\nodejs\\npm.cmd'
     }
 
@@ -12,10 +11,16 @@ pipeline {
         stage('Start Test Environment') {
             steps {
                 script {
-                    bat "docker compose down --volumes --remove-orphans || exit 0"
+                    bat "docker compose down --volumes --remove-orphans"
                     bat "docker compose up -d mongodb backend"
-                    powershell 'Start-Sleep -Seconds 15'
                 }
+
+                powershell '''
+                    Write-Host "Waiting for services..."
+                    Start-Sleep -Seconds 15
+                '''
+
+                bat "docker ps"
             }
         }
 
@@ -49,7 +54,7 @@ pipeline {
 
     post {
         always {
-            bat "docker compose down --volumes --remove-orphans || exit 0"
+            bat "docker compose down --volumes --remove-orphans"
         }
     }
 }
