@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE_BACKEND = 'priyankamanickam/complaint-backend'
+        DOCKER_IMAGE_BACKEND = 'jananisaravanan9751/complaint-backend'
     }
 
     stages {
@@ -25,7 +25,7 @@ pipeline {
 
         stage('Install Test Dependencies') {
             steps {
-                dir('tests') {   // ✅ FIXED
+                dir('tests') {
                     bat "npm install"
                 }
             }
@@ -33,7 +33,7 @@ pipeline {
 
         stage('Run Integration Tests') {
             steps {
-                dir('tests') {   // ✅ FIXED
+                dir('tests') {
                     bat "npm test"
                 }
             }
@@ -41,13 +41,9 @@ pipeline {
 
         stage('Build and Push Backend Image') {
             steps {
-                script {
-                    docker.withRegistry('https://docker.io', 'DockerHub') {
-                        dir('backend') {   // ✅ FIXED
-                            def image = docker.build("${DOCKER_IMAGE_BACKEND}:latest")
-                            image.push()
-                        }
-                    }
+                dir('backend') {
+                    bat 'docker build -t jananisaravanan9751/complaint-backend:latest .'
+                    bat 'docker push jananisaravanan9751/complaint-backend:latest'
                 }
             }
         }
