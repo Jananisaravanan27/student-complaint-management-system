@@ -1,4 +1,4 @@
-version: "3.8"
+version: '3.8'
 
 services:
   mongodb:
@@ -17,7 +17,7 @@ services:
       - complaint-net
 
   backend:
-    image: jananisaravanan9751/complaint-backend:latest   # ✅ YOUR IMAGE
+    build: ./backend   # 🔥 FIXED (no more Docker Hub pull issue)
     container_name: complaint-backend
     restart: unless-stopped
     ports:
@@ -27,7 +27,7 @@ services:
     environment:
       - PORT=5000
       - MONGO_URI=mongodb://admin:password123@mongodb:27017/complaintDB?authSource=admin
-      - JWT_SECRET=your_super_secret_key_change_me_in_production
+      - JWT_SECRET=your_super_secret_key
     networks:
       - complaint-net
 
