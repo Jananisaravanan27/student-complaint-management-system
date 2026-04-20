@@ -10,16 +10,18 @@ pipeline {
         stage('Start Test Environment') {
             steps {
                 script {
-                    bat "docker-compose down --volumes --remove-orphans"
-                    bat "docker-compose up -d mongodb backend"
+                    // Use modern docker compose
+                    bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose down --volumes --remove-orphans'
+                    bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d mongodb backend'
                 }
 
+                // Better wait logic
                 powershell '''
-                    Write-Host "Waiting for services..."
-                    Start-Sleep -Seconds 15
+                    Write-Host "Waiting for backend to be ready..."
+                    Start-Sleep -Seconds 20
                 '''
 
-                bat "docker ps"
+                bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" ps'
             }
         }
 
@@ -55,7 +57,7 @@ pipeline {
 
     post {
         always {
-            bat "docker-compose down --volumes --remove-orphans"
+            bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose down --volumes --remove-orphans'
         }
     }
 }
