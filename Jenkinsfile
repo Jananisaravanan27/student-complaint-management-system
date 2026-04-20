@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE_BACKEND = 'jananisaravanan9751/complaint-backend'
+        DOCKER_PATH = '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe"'
     }
 
     stages {
@@ -10,16 +11,28 @@ pipeline {
         stage('Start Test Environment') {
             steps {
                 script {
-                    bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose down --volumes --remove-orphans'
-                    bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d mongodb backend'
+
+                    // 🔥 Force remove old containers (important fix)
+                    bat 'docker rm -f complaint-mongo complaint-backend complaint-frontend 2>nul || exit 0'
+
+                    // 🔥 Clean networks (prevents hidden conflicts)
+                    bat 'docker network prune -f'
+
+                    // Stop any existing compose
+                    bat "${DOCKER_PATH} compose down --volumes --remove-orphans"
+
+                    // Start fresh containers
+                    bat "${DOCKER_PATH} compose up -d mongodb backend"
                 }
 
+                // Wait for backend to boot
                 powershell '''
                     Write-Host "Waiting for backend to be ready..."
                     Start-Sleep -Seconds 20
                 '''
 
-                bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" ps'
+                // Check running containers
+                bat "${DOCKER_PATH} ps"
             }
         }
 
@@ -42,8 +55,8 @@ pipeline {
         stage('Build and Push Backend Image') {
             steps {
                 dir('backend') {
-                    bat 'docker build -t jananisaravanan9751/complaint-backend:latest .'
-                    bat 'docker push jananisaravanan9751/complaint-backend:latest'
+                    bat "docker build -t %DOCKER_IMAGE_BACKEND%:latest ."
+                    bat "docker push %DOCKER_IMAGE_BACKEND%:latest"
                 }
             }
         }
@@ -51,7 +64,10 @@ pipeline {
 
     post {
         always {
-            bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose down --volumes --remove-orphans'
+            script {
+                // Cleanup after pipeline
+                bat "${DOCKER_PATH} compose down --volumes --remove-orphans"
+            }
         }
     }
 }
