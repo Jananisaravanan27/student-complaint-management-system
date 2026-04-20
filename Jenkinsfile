@@ -9,25 +9,25 @@ pipeline {
 
         stage('Start Test Environment') {
             steps {
-                script {
-                    // Use modern docker compose
-                    bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose down --volumes --remove-orphans'
-                    bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d mongodb backend'
+                dir('STUDENT') {
+                    script {
+                        bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose down --volumes --remove-orphans'
+                        bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d mongodb backend'
+                    }
+
+                    powershell '''
+                        Write-Host "Waiting for backend to be ready..."
+                        Start-Sleep -Seconds 20
+                    '''
+
+                    bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" ps'
                 }
-
-                // Better wait logic
-                powershell '''
-                    Write-Host "Waiting for backend to be ready..."
-                    Start-Sleep -Seconds 20
-                '''
-
-                bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" ps'
             }
         }
 
         stage('Install Test Dependencies') {
             steps {
-                dir('tests') {
+                dir('STUDENT/tests') {
                     bat "npm install"
                 }
             }
@@ -35,7 +35,7 @@ pipeline {
 
         stage('Run Integration Tests') {
             steps {
-                dir('tests') {
+                dir('STUDENT/tests') {
                     bat "npm test"
                 }
             }
@@ -45,7 +45,7 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://docker.io', 'DockerHub') {
-                        dir('backend') {
+                        dir('STUDENT/backend') {
                             def image = docker.build("${DOCKER_IMAGE_BACKEND}:latest")
                             image.push()
                         }
@@ -57,7 +57,9 @@ pipeline {
 
     post {
         always {
-            bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose down --volumes --remove-orphans'
+            dir('STUDENT') {
+                bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose down --volumes --remove-orphans'
+            }
         }
     }
 }
