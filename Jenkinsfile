@@ -7,11 +7,23 @@ pipeline {
 
     stages {
 
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Start Test Environment') {
             steps {
                 dir('STUDENT') {
                     script {
-                        bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose down --volumes --remove-orphans'
+                        // Force remove old containers (fix conflict issue)
+                        bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" rm -f complaint-mongo complaint-backend || exit 0'
+
+                        // Clean environment
+                        bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose down --volumes --remove-orphans || exit 0'
+
+                        // Start fresh containers
                         bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d mongodb backend'
                     }
 
@@ -21,6 +33,17 @@ pipeline {
                     '''
 
                     bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" ps'
+                }
+            }
+        }
+
+        stage('DEBUG - Check files') {
+            steps {
+                dir('STUDENT/tests') {
+                    bat 'echo CURRENT DIRECTORY:'
+                    bat 'cd'
+                    bat 'echo FILES:'
+                    bat 'dir'
                 }
             }
         }
@@ -58,7 +81,7 @@ pipeline {
     post {
         always {
             dir('STUDENT') {
-                bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose down --volumes --remove-orphans'
+                bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose down --volumes --remove-orphans || exit 0'
             }
         }
     }
