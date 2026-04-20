@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   mongodb:
     image: mongo:6
@@ -15,7 +17,7 @@ services:
       - complaint-net
 
   backend:
-    image: priyankamanickam/student-complaint-management-system-backend:latest
+    image: jananisaravanan9751/complaint-backend:latest   # ✅ YOUR IMAGE
     container_name: complaint-backend
     restart: unless-stopped
     ports:
