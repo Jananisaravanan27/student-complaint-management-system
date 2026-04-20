@@ -10,35 +10,37 @@ pipeline {
 
         stage('Start Test Environment') {
             steps {
-                script {
+                dir('STUDENT') {
 
-                    // 🔥 Force remove old containers (important fix)
-                    bat 'docker rm -f complaint-mongo complaint-backend complaint-frontend 2>nul || exit 0'
+                    script {
+                        // 🔥 Force clean old containers
+                        bat 'docker rm -f complaint-mongo complaint-backend complaint-frontend 2>nul || exit 0'
 
-                    // 🔥 Clean networks (prevents hidden conflicts)
-                    bat 'docker network prune -f'
+                        // 🔥 Clean networks
+                        bat 'docker network prune -f'
 
-                    // Stop any existing compose
-                    bat "${DOCKER_PATH} compose down --volumes --remove-orphans"
+                        // Stop existing containers
+                        bat "${DOCKER_PATH} compose down --volumes --remove-orphans"
 
-                    // Start fresh containers
-                    bat "${DOCKER_PATH} compose up -d mongodb backend"
+                        // Start fresh containers
+                        bat "${DOCKER_PATH} compose up -d mongodb backend"
+                    }
+
+                    // Wait for backend to start
+                    powershell '''
+                        Write-Host "Waiting for backend to be ready..."
+                        Start-Sleep -Seconds 20
+                    '''
+
+                    // Verify running containers
+                    bat "${DOCKER_PATH} ps"
                 }
-
-                // Wait for backend to boot
-                powershell '''
-                    Write-Host "Waiting for backend to be ready..."
-                    Start-Sleep -Seconds 20
-                '''
-
-                // Check running containers
-                bat "${DOCKER_PATH} ps"
             }
         }
 
         stage('Install Test Dependencies') {
             steps {
-                dir('tests') {
+                dir('STUDENT/tests') {
                     bat "npm install"
                 }
             }
@@ -46,7 +48,7 @@ pipeline {
 
         stage('Run Integration Tests') {
             steps {
-                dir('tests') {
+                dir('STUDENT/tests') {
                     bat "npm test"
                 }
             }
@@ -54,7 +56,7 @@ pipeline {
 
         stage('Build and Push Backend Image') {
             steps {
-                dir('backend') {
+                dir('STUDENT/backend') {
                     bat "docker build -t %DOCKER_IMAGE_BACKEND%:latest ."
                     bat "docker push %DOCKER_IMAGE_BACKEND%:latest"
                 }
@@ -64,8 +66,7 @@ pipeline {
 
     post {
         always {
-            script {
-                // Cleanup after pipeline
+            dir('STUDENT') {
                 bat "${DOCKER_PATH} compose down --volumes --remove-orphans"
             }
         }
