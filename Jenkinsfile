@@ -3,7 +3,6 @@ pipeline {
 
     environment {
         DOCKER_IMAGE_BACKEND = 'priyankamanickam/complaint-backend'
-        NPM = 'C:\\Program Files\\nodejs\\npm.cmd'
     }
 
     stages {
@@ -11,8 +10,8 @@ pipeline {
         stage('Start Test Environment') {
             steps {
                 script {
-                    bat "docker compose down --volumes --remove-orphans"
-                    bat "docker compose up -d mongodb backend"
+                    bat "docker-compose down --volumes --remove-orphans"
+                    bat "docker-compose up -d mongodb backend"
                 }
 
                 powershell '''
@@ -27,7 +26,7 @@ pipeline {
         stage('Install Test Dependencies') {
             steps {
                 dir('tests') {
-                    bat "${env.NPM} install"
+                    bat "npm install"
                 }
             }
         }
@@ -35,7 +34,7 @@ pipeline {
         stage('Run Integration Tests') {
             steps {
                 dir('tests') {
-                    bat "${env.NPM} test"
+                    bat "npm test"
                 }
             }
         }
@@ -44,8 +43,10 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://docker.io', 'DockerHub') {
-                        def image = docker.build("${DOCKER_IMAGE_BACKEND}:latest", "./backend")
-                        image.push()
+                        dir('backend') {
+                            def image = docker.build("${DOCKER_IMAGE_BACKEND}:latest")
+                            image.push()
+                        }
                     }
                 }
             }
@@ -54,7 +55,7 @@ pipeline {
 
     post {
         always {
-            bat "docker compose down --volumes --remove-orphans"
+            bat "docker-compose down --volumes --remove-orphans"
         }
     }
 }
